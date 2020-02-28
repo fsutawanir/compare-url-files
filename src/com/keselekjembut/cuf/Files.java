@@ -19,7 +19,6 @@ public class Files {
             bufferedReader = new BufferedReader(fileReader);
 
             while((line = bufferedReader.readLine()) != null) {
-                System.out.println(line);
                 rows.add(line);
             }
 
