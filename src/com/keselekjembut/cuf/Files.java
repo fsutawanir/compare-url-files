@@ -6,7 +6,23 @@ import java.util.LinkedList;
 
 public class Files {
 	
-	public synchronized static List<String> getRows(String filePath) {
+	interface IFileReaderCallback {
+		void complete(List<String> rows);
+	}
+	
+	public static void getRowsAsync(String filePath, final IFileReaderCallback callback) {
+		final Runnable run = new Runnable() {
+			@Override
+			public void run() {
+				final List<String> rows = Files.getRows(filePath);
+				callback.complete(rows);
+			}
+		};
+		final Thread thread = new Thread(run);
+		thread.start();
+	}
+	
+	public static List<String> getRows(String filePath) {
 		final List<String> rows = new LinkedList<String>();
         String line = null;
         BufferedReader bufferedReader = null;
