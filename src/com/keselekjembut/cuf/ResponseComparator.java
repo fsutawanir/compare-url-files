@@ -16,7 +16,7 @@ import com.keselekjembut.cuf.Files.IFileReaderCallback;
 public class ResponseComparator {
 
 	/**
-	 * Synchronously compare each line url response between 2 files
+	 * Synchronously compare each line URL response between 2 files
 	 * 
 	 * @param filePath1 First file path
 	 * @param filePath2 Second file path
@@ -24,7 +24,7 @@ public class ResponseComparator {
 	 * @return List of boolean containing each line comparison result  
 	 */
 	public List<Boolean> compare(final String filePath1, final String filePath2) {
-		// Read the file and collect url in each line
+		// Read the file and collect URL in each line
 		final List<String> rows1 = Files.getInstance().getRows(filePath1);
 		final List<String> rows2 = Files.getInstance().getRows(filePath2);
 		
@@ -55,7 +55,7 @@ public class ResponseComparator {
 	}
 	
 	/**
-	 * Asynchronously compare each line url response between 2 files
+	 * Asynchronously compare each line URL response between 2 files
 	 * 
 	 * @param filePath1 First file path
 	 * @param filePath2 Second file path
@@ -90,11 +90,11 @@ public class ResponseComparator {
 			// do nothing
 		}
 		
-		// Preapre the list to hold each line response comparison result
+		// Prepare the list to hold each line response comparison result
 		final List<Boolean> results = new LinkedList<Boolean>();
-		// Get first file url collection
+		// Get first file URL collection
 		final List<String> rows1 = fileRowList.get(0);
-		// Get second file url collection
+		// Get second file URL collection
 		final List<String> rows2 = fileRowList.get(1);
 		
 		// Decide which file is longer to be use in looping
@@ -102,27 +102,37 @@ public class ResponseComparator {
 		final int row2Size = rows2.size();
 		final int lengthUse = row1Size > row2Size ? row1Size : row2Size;
 		
-		// Useful to hold process until url comparison process is complete
+		// Useful to hold process until URL comparison process is complete
 		// lengthUse as parameter because we want thread to wait n process to be complete.
 		final CountDownLatch latch = new CountDownLatch(lengthUse);
 		
 		for(int i = 0; i < lengthUse; i++) {
 			try {
+				
 				if(i > row1Size || i > row2Size) {
+					// If there is difference in row size
+					// just add comparison result as false
 					results.add(false);
 					continue;
 				}
+				
 				final int index = i;
 				final String url = rows1.get(i);
 				final String url2 = rows2.get(i);
+				
+				// Prepare comparison data wrapper
 				final ComparatorData comparatorData = new ComparatorData(url, url2);
-				this.compareResponseAsync(comparatorData, new ICallback() {
+				
+				// Start comparison process
+				this.compareResponseAsync(comparatorData, new IResponseComparisonCallback() {
 					@Override
 					public void completed(boolean isEqual) {
 						System.out.println("["+index+"]["+isEqual+"]");
+						// Collect response comparison result
 						results.add(isEqual);
+						// Notify latch to count down to mark that one process is complete 
 						latch.countDown();
-					}					
+					}
 				});
 			} catch (Exception e) {
 				System.out.println(e.getMessage() );
@@ -139,10 +149,10 @@ public class ResponseComparator {
 	}
 	
 	/**
-	 * Compare 2 url response synchronously.
+	 * Compare 2 URL response synchronously.
 	 * 
-	 * @param url1 Url to be compare
-	 * @param url2 Url to be compare
+	 * @param url1 URL to be compare
+	 * @param url2 URL to be compare
 	 * 
 	 * @return Return TRUE if response is equal
 	 * 
@@ -155,36 +165,43 @@ public class ResponseComparator {
 	}
 	
 	/**
-	 * Compare 2 url response asynchronously.
+	 * Compare 2 URL response asynchronously.
 	 * 
 	 * @param comparatorData
 	 * @param callback
 	 */
 	private void compareResponseAsync(
 		final ComparatorData comparatorData,
-		final ICallback callback
+		final IResponseComparisonCallback callback
 	) {
-		
-		// Preparing the callback to retrieved asynchronous http request response
+		// Preparing the callback to retrieved asynchronous HTTP request response
 		final FutureCallback<SimpleHttpResponse> requestCallback = new FutureCallback<SimpleHttpResponse>() {
 			@Override
 			public void completed(SimpleHttpResponse response) {
+				// Collect response
 				comparatorData.addResponse(response.getBodyText());
 				invokeCallback();
 			}
 
 			@Override
 			public void cancelled() {
+				// If HTTP request is cancel, this method will be called
+				// lets just set response to null
 				comparatorData.addResponse(null);
 				invokeCallback();
 			}
 
 			@Override
 			public void failed(Exception e) {
+				// If HTTP request is failed, this method will be called
+				// lets just set response to null
 				comparatorData.addResponse(null);
 				invokeCallback();
 			}
 			
+			/**
+			 * Invoke callback if all URL response is collected to return comparison result
+			 */
 			private void invokeCallback() {
 				// Check if all response has been collected
 				if(comparatorData.isCompleted() ) {
@@ -195,17 +212,23 @@ public class ResponseComparator {
 			}
 	    };
 	    
-	    // Start the process to get response from url 1
+	    // Start the process to get response from URL 1
 		Https.getInstance().getAsync(comparatorData.getUrl1(), requestCallback);
-	    // Start the process to get response from url 2
+	    // Start the process to get response from URL 2
 		Https.getInstance().getAsync(comparatorData.getUrl2(), requestCallback);
 	}
 	
 	/**
-	 * 
-	 *
+	 * URL comparison process callback
 	 */
-	interface ICallback {
+	interface IResponseComparisonCallback {
+		
+		/**
+		 * Will be called if comparison process between both URL is complete
+		 * then return the result.
+		 * 
+		 * @param isEqual Response comparison result
+		 */
 		void completed(boolean isEqual);
 	}
 }

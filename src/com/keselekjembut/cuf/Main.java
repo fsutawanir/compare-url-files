@@ -8,19 +8,19 @@ import java.util.List;
 public class Main {
 	
 	/**
-	 * File path containings 2 url sample for testing 
+	 * File path contains 2 URL sample for testing 
 	 */
 	private static final String TEST_2DATA_1_PATH = "files/test-2data-1.txt";
 	private static final String TEST_2DATA_2_PATH = "files/test-2data-2.txt";
 	
 	/**
-	 * File path containings 100 url sample for testing
+	 * File path contains 100 URL sample for testing
 	 */
 	private static final String TEST_100DATA_1_PATH = "files/test-100data-1.txt";
 	private static final String TEST_100DATA_2_PATH = "files/test-100data-2.txt";
 	
 	/**
-	 * File path containings 500 url sample for testing
+	 * File path contains 500 URL sample for testing
 	 */
 	private static final String TEST_500DATA_1_PATH = "files/test-500data-1.txt";
 	private static final String TEST_500DATA_2_PATH = "files/test-500data-2.txt";
@@ -31,8 +31,8 @@ public class Main {
 	 * @param args
 	 */
 	public static void main(String [] args) {	
-		Main.compare(Main.TEST_100DATA_1_PATH, Main.TEST_100DATA_2_PATH);
-		Main.compareAsync(Main.TEST_100DATA_1_PATH, Main.TEST_100DATA_2_PATH);
+		// Main.compare(Main.TEST_2DATA_1_PATH, Main.TEST_2DATA_1_PATH);
+		Main.compareAsync(Main.TEST_500DATA_1_PATH, Main.TEST_500DATA_2_PATH);
     }
 	
 	/**
