@@ -24,12 +24,18 @@ public class ResponseComparator {
 	 * @return Contains list of boolean 
 	 */
 	public List<Boolean> compare(final String filePath1, final String filePath2) {
+		// Read the file and collect url in each line
 		final List<String> rows1 = Files.getInstance().getRows(filePath1);
 		final List<String> rows2 = Files.getInstance().getRows(filePath2);
+		
+		// Prepare the list to hold each line comparison result 
 		final List<Boolean> results = new LinkedList<Boolean>();
+
+		// Decide which file is longer to be use in looping
 		final int row1Size = rows1.size();
 		final int row2Size = rows2.size();
 		final int lengthUse = row1Size > row2Size ? row1Size : row2Size;
+		
 		for(int i = 0; i < lengthUse; i++) {
 			try {
 				if(i > row1Size || i > row2Size) {
@@ -109,12 +115,27 @@ public class ResponseComparator {
 		return results;
 	}
 	
+	/**
+	 * Compare 2 url response synchronously.
+	 * 
+	 * @param url1 Url to be compare
+	 * @param url2 Url to be compare
+	 * 
+	 * @return Return TRUE if response is equal
+	 * 
+	 * @throws Exception
+	 */
 	private boolean compareResponse(final String url1, final String url2) throws Exception {
 		final String response1 = Https.getInstance().get(url1);
 		final String response2 = Https.getInstance().get(url2);
 		return response1.equals(response2);
 	}
 	
+	/**
+	 * 
+	 * @param comparatorData
+	 * @param callback
+	 */
 	private void compareResponseAsync(
 		final ComparatorData comparatorData,
 		final ICallback callback
@@ -140,7 +161,7 @@ public class ResponseComparator {
 			
 			private void invokeCallback() {
 				if(comparatorData.isCompleted() ) {
-					callback.completed(comparatorData.isEqual() );
+					callback.completed(comparatorData.isResponseEqual() );
 				}
 			}
 	    };
@@ -148,6 +169,10 @@ public class ResponseComparator {
 		Https.getInstance().getAsync(comparatorData.getUrl2(), requestCallback);
 	}
 	
+	/**
+	 * 
+	 *
+	 */
 	interface ICallback {
 		void completed(boolean isEqual);
 	}

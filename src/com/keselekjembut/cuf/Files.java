@@ -22,7 +22,7 @@ class Files {
 	 * 
 	 * @return Files instance
 	 */
-	public static final Files getInstance() {
+	public synchronized static final Files getInstance() {
 		if(Files.INSTANCE == null) {
 			Files.INSTANCE = new Files();
 		}
@@ -60,6 +60,7 @@ class Files {
 	 */
 	public List<String> getRows(String filePath) {
 		final List<String> rows = new LinkedList<String>();
+		
         String line = null;
         BufferedReader bufferedReader = null;
 
@@ -78,6 +79,7 @@ class Files {
             System.out.println("Error reading file '" + filePath + "'");                  
         }
         finally {
+        	// Do not forget to close the file
             try {
                 if(bufferedReader != null) {
                     bufferedReader.close();
