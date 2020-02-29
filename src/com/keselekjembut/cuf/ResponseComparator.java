@@ -18,10 +18,10 @@ public class ResponseComparator {
 	/**
 	 * Synchronously compare each line url response between 2 files
 	 * 
-	 * @param filePath1
-	 * @param filePath2
+	 * @param filePath1 First file path
+	 * @param filePath2 Second file path
 	 * 
-	 * @return Contains list of boolean 
+	 * @return List of boolean containing each line comparison result  
 	 */
 	public List<Boolean> compare(final String filePath1, final String filePath2) {
 		// Read the file and collect url in each line
@@ -54,32 +54,58 @@ public class ResponseComparator {
 		return results;
 	}
 	
+	/**
+	 * Asynchronously compare each line url response between 2 files
+	 * 
+	 * @param filePath1 First file path
+	 * @param filePath2 Second file path
+	 * 
+	 * @return List of boolean containing each line comparison result  
+	 */
 	public List<Boolean> compareAsync(final String filePath1, final String filePath2) {
+		// Useful to hold process until file reading is complete.
+		// 2 as parameter because we want thread to wait 2 process to be complete. 
 		final CountDownLatch readFileLatch = new CountDownLatch(2);
+		// Contain each line of both file
 		final List<List<String>> fileRowList = new LinkedList<List<String>>();
+		// File reader callback
 		final IFileReaderCallback fileReaderCallback = new IFileReaderCallback() {
 			@Override
 			public void complete(List<String> rows) {
+				// Notify latch to mark 1 process is complete 
 				readFileLatch.countDown();
+				// Collect file row result 
 				fileRowList.add(rows);
 			}
 		};
+		// Read first file
 		Files.getInstance().getRowsAsync(filePath1, fileReaderCallback);
+		// Read second file
 		Files.getInstance().getRowsAsync(filePath2, fileReaderCallback);
 		
 		try {
+			// Thread will be wait until file reading is complete
 			readFileLatch.await();
 		} catch (InterruptedException e1) {
-			e1.printStackTrace();
+			// do nothing
 		}
 		
+		// Preapre the list to hold each line response comparison result
 		final List<Boolean> results = new LinkedList<Boolean>();
+		// Get first file url collection
 		final List<String> rows1 = fileRowList.get(0);
+		// Get second file url collection
 		final List<String> rows2 = fileRowList.get(1);
+		
+		// Decide which file is longer to be use in looping
 		final int row1Size = rows1.size();
 		final int row2Size = rows2.size();
 		final int lengthUse = row1Size > row2Size ? row1Size : row2Size;
+		
+		// Useful to hold process until url comparison process is complete
+		// lengthUse as parameter because we want thread to wait n process to be complete.
 		final CountDownLatch latch = new CountDownLatch(lengthUse);
+		
 		for(int i = 0; i < lengthUse; i++) {
 			try {
 				if(i > row1Size || i > row2Size) {
@@ -106,11 +132,8 @@ public class ResponseComparator {
 		try {
 			latch.await();
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			// do nothing
 		}
-		
-		System.out.println("[DONE]");
 		
 		return results;
 	}
@@ -132,6 +155,7 @@ public class ResponseComparator {
 	}
 	
 	/**
+	 * Compare 2 url response asynchronously.
 	 * 
 	 * @param comparatorData
 	 * @param callback
@@ -140,6 +164,8 @@ public class ResponseComparator {
 		final ComparatorData comparatorData,
 		final ICallback callback
 	) {
+		
+		// Preparing the callback to retrieved asynchronous http request response
 		final FutureCallback<SimpleHttpResponse> requestCallback = new FutureCallback<SimpleHttpResponse>() {
 			@Override
 			public void completed(SimpleHttpResponse response) {
@@ -160,12 +186,18 @@ public class ResponseComparator {
 			}
 			
 			private void invokeCallback() {
+				// Check if all response has been collected
 				if(comparatorData.isCompleted() ) {
+					// If yes, then start the comparison
+					// and invoke callback so it will be collected
 					callback.completed(comparatorData.isResponseEqual() );
 				}
 			}
 	    };
+	    
+	    // Start the process to get response from url 1
 		Https.getInstance().getAsync(comparatorData.getUrl1(), requestCallback);
+	    // Start the process to get response from url 2
 		Https.getInstance().getAsync(comparatorData.getUrl2(), requestCallback);
 	}
 	
