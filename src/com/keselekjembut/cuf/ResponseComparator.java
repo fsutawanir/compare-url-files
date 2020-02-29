@@ -1,24 +1,31 @@
 package com.keselekjembut.cuf;
 
-import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 import org.apache.hc.core5.concurrent.FutureCallback;
 
-import com.keselekjembut.cuf.Files.IFileReaderCallback;
-
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 
+import com.keselekjembut.cuf.Files.IFileReaderCallback;
+
+/**
+ * Entry point to start comparing response between 2 files
+ */
 public class ResponseComparator {
 
+	/**
+	 * Synchronously compare each line url response between 2 files
+	 * 
+	 * @param filePath1
+	 * @param filePath2
+	 * 
+	 * @return Contains list of boolean 
+	 */
 	public List<Boolean> compare(final String filePath1, final String filePath2) {
-		final List<String> rows1 = Files.getRows(filePath1);
-		final List<String> rows2 = Files.getRows(filePath2);
+		final List<String> rows1 = Files.getInstance().getRows(filePath1);
+		final List<String> rows2 = Files.getInstance().getRows(filePath2);
 		final List<Boolean> results = new LinkedList<Boolean>();
 		final int row1Size = rows1.size();
 		final int row2Size = rows2.size();
@@ -34,7 +41,7 @@ public class ResponseComparator {
 				final boolean isEqual = this.compareResponse(url, url2);
 				results.add(isEqual);
 			} catch (Exception e) {
-				
+				// do nothing
 			}
 		}
 		
@@ -42,29 +49,21 @@ public class ResponseComparator {
 	}
 	
 	public List<Boolean> compareAsync(final String filePath1, final String filePath2) {
-		// final List<String> rows1 = Files.getRows(filePath1);
-		// final List<String> rows2 = Files.getRows(filePath2);
 		final CountDownLatch readFileLatch = new CountDownLatch(2);
-		final List<List<String>> fileRowList = new LinkedList<List<String>>(); 
-		Files.getRowsAsync(filePath1, new IFileReaderCallback() {
+		final List<List<String>> fileRowList = new LinkedList<List<String>>();
+		final IFileReaderCallback fileReaderCallback = new IFileReaderCallback() {
 			@Override
 			public void complete(List<String> rows) {
 				readFileLatch.countDown();
 				fileRowList.add(rows);
 			}
-		});
-		Files.getRowsAsync(filePath2, new IFileReaderCallback() {
-			@Override
-			public void complete(List<String> rows) {
-				readFileLatch.countDown();
-				fileRowList.add(rows);
-			}
-		});
+		};
+		Files.getInstance().getRowsAsync(filePath1, fileReaderCallback);
+		Files.getInstance().getRowsAsync(filePath2, fileReaderCallback);
 		
 		try {
 			readFileLatch.await();
 		} catch (InterruptedException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 		

@@ -4,17 +4,44 @@ import java.io.*;
 import java.util.List;
 import java.util.LinkedList;
 
-public class Files {
+/**
+ * File helper
+ */
+class Files {
 	
-	interface IFileReaderCallback {
-		void complete(List<String> rows);
+	/** Singleton instance of Files */
+	private static Files INSTANCE;
+	
+	/** Private constructor */
+	private Files() {
+		
 	}
 	
-	public static void getRowsAsync(String filePath, final IFileReaderCallback callback) {
+	/**
+	 * Get singleton instance of Files
+	 * 
+	 * @return Files instance
+	 */
+	public static final Files getInstance() {
+		if(Files.INSTANCE == null) {
+			Files.INSTANCE = new Files();
+		}
+		return Files.INSTANCE;
+	}
+	
+	/**
+	 * Read file, collect string per row, then returns it as a list via a callback.
+	 * If there's an exception, null will be sent.
+	 * All process running asynchronously.
+	 * 
+	 * @param filePath
+	 * @param callback
+	 */
+	public void getRowsAsync(String filePath, final IFileReaderCallback callback) {
 		final Runnable run = new Runnable() {
 			@Override
 			public void run() {
-				final List<String> rows = Files.getRows(filePath);
+				final List<String> rows = Files.getInstance().getRows(filePath);
 				callback.complete(rows);
 			}
 		};
@@ -22,22 +49,26 @@ public class Files {
 		thread.start();
 	}
 	
-	public static List<String> getRows(String filePath) {
+	/**
+	 * Read file, collect string per row, then returns it as a list.
+	 * If there's an exception, return null.
+	 * 
+	 * @param filePath
+	 * @param callback
+	 * 
+	 * @return List of string in each row in file
+	 */
+	public List<String> getRows(String filePath) {
 		final List<String> rows = new LinkedList<String>();
         String line = null;
         BufferedReader bufferedReader = null;
 
         try {
-            // FileReader reads text files in the default encoding.
             FileReader fileReader = new FileReader(filePath);
-
-            // Always wrap FileReader in BufferedReader.
             bufferedReader = new BufferedReader(fileReader);
-
             while((line = bufferedReader.readLine()) != null) {
                 rows.add(line);
             }
-
             return rows;
         }
         catch(FileNotFoundException ex) {
@@ -45,13 +76,10 @@ public class Files {
         }
         catch(IOException ex) {
             System.out.println("Error reading file '" + filePath + "'");                  
-            // Or we could just do this: 
-            // ex.printStackTrace();
         }
         finally {
             try {
                 if(bufferedReader != null) {
-                    // Always close files.
                     bufferedReader.close();
                 }
             }
@@ -61,5 +89,18 @@ public class Files {
         }
 
         return null;
+	}
+	
+	/**
+	 * File reader callback
+	 */
+	interface IFileReaderCallback {
+		
+		/**
+		 * Will be invoked if read file and collect string in each line is complete
+		 * 
+		 * @param rows List of each line in file
+		 */
+		void complete(List<String> rows);
 	}
 }
